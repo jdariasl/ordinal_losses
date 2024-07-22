@@ -92,4 +92,4 @@ class probabilistic_ordinal_loss(nn.Module):
              torch.cat([torch.zeros((batch_size, 1), dtype=torch.float32), sigmoid_est_mean], dim=1)
         mean_probs = torch.clamp(mean_probs,epsilon,torch.tensor(1.0))
         log_probs = torch.log(mean_probs)
-        return -self.CE_loss(log_probs, target)
+        return self.CE_loss(log_probs, target)
