@@ -81,12 +81,19 @@ class probabilistic_ordinal_loss(nn.Module):
         else:
             self.CE_loss = torch.nn.CrossEntropyLoss(weight=class_weigth)
 
-    def forward(self, theta, input, target):
-        #theta are the logits predicted thresholds [batch,n_classes-1]
-        #input is the predicted regression value (one-dimensional) [batch,]
-        #target must a tensor with int numbers indicating the target class [batch,]
+    def forward(self, input, target):
+        #input is composed of [batch,[theta,input]], considering an ordinal problem with C different ordinal classes,
+        #the network must have an output layer with C neurons, the first C-1 outputs are the prediction of the thresholds, called theta,
+        #and the last one is the predicted class.
+        #target must be a tensor with int numbers indicating the target class [batch,]
+        
+        #Internally, the implementation split the input into:
+        #theta that are the logits predicted thresholds [batch,n_classes-1]
+        #input that is the predicted regression value (one-dimensional) [batch,]
+        
+        theta = input[:,0:-1]
         batch_size = theta.shape[0]
-        input = input.reshape(-1,1)
+        input = input[:,-1].reshape(batch_size,1)
         theta_values = torch.cumsum(torch.clamp(F.softplus(theta), self.epsilon, torch.tensor(1e20)),1)
         sigmoid_est_mean = F.sigmoid(theta_values - input)
         mean_probs = torch.cat([sigmoid_est_mean, torch.ones((batch_size, 1), dtype=torch.float32)], dim=1) - \
