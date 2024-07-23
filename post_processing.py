@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 
+#The model trained using the probabilistic ordinal loss requires a postprocessing step to get the final prediction
 def post_processing_prob_ordinal(model_output):
 
   epsilon = torch.tensor(1e-6, dtype=torch.float32)
