@@ -1,5 +1,6 @@
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 #See: Arias-Londoño, J. D., Gómez-García, J. A., & Godino-Llorente, J. I. (2019). 
 #Multimodal and multi-output deep learning architectures for the automatic assessment 
@@ -8,7 +9,7 @@ import torch.nn.functional as F
 #Weigthed ordinal cross-entropy loss
 class ordinal_ce_loss(nn.Module):
     def __init__(self, class_weigth=None):
-        super(ordinal_loss, self).__init__()
+        super(ordinal_ce_loss, self).__init__()
         if class_weigth is None:
             self.CE_loss = torch.nn.CrossEntropyLoss(reduce=False)
         else:
@@ -24,7 +25,7 @@ class ordinal_ce_loss(nn.Module):
 #Weigthed ordinal binary cross-entropy
 class ordinal_binary_loss(nn.Module):
     def __init__(self, class_weigth=None):
-        super(ordinal_loss, self).__init__()
+        super(ordinal_binary_loss, self).__init__()
         if class_weigth is None:
             self.Bi_loss = torch.nn.BCEWithLogitsLoss()
         else:
@@ -73,12 +74,12 @@ class ordinal_binary_loss(nn.Module):
 #incomplete heterogeneous data using vaes. Pattern Recognition, 107, 107501.
 class probabilistic_ordinal_loss(nn.Module):
     def __init__(self, class_weigth=None):
-        super(ordinal_loss, self).__init__()
-        epsilon = torch.tensor(1e-6, dtype=tf.float32)
+        super(probabilistic_ordinal_loss, self).__init__()
+        self.epsilon = torch.tensor(1e-6, dtype=torch.float32)
         if class_weigth is None:
-            self.CE_loss = torch.nn.CrossEntropyLoss(reduce=False)
+            self.CE_loss = torch.nn.CrossEntropyLoss()
         else:
-            self.CE_loss = torch.nn.CrossEntropyLoss(weight=class_weigth, reduce=False)
+            self.CE_loss = torch.nn.CrossEntropyLoss(weight=class_weigth)
 
     def forward(self, theta, input, target):
         #theta are the logits predicted thresholds [batch,n_classes-1]
@@ -90,6 +91,6 @@ class probabilistic_ordinal_loss(nn.Module):
         sigmoid_est_mean = F.sigmoid(theta_values - input)
         mean_probs = torch.cat([sigmoid_est_mean, torch.ones((batch_size, 1), dtype=torch.float32)], dim=1) - \
              torch.cat([torch.zeros((batch_size, 1), dtype=torch.float32), sigmoid_est_mean], dim=1)
-        mean_probs = torch.clamp(mean_probs,epsilon,torch.tensor(1.0))
+        mean_probs = torch.clamp(mean_probs,self.epsilon,torch.tensor(1.0))
         log_probs = torch.log(mean_probs)
         return self.CE_loss(log_probs, target)
